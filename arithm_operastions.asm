@@ -1,13 +1,19 @@
 masm
 model small dos
 
+; Variant 8: C=A+B*2
+
 data segment para public 'data'
-    enter_first_hex_number_msg db 'Enter two digits of first hex number:$'
-    enter_second_hex_number_msg db 'Enter two digits of second hex number:$'
-    first_number_bits_msg db 'First number bits:$'
-    second_number_bits_msg db 'Second number bits:$'
+    enter_A_hex_number_msg db 'Enter two digits of A hex number:$'
+    enter_B_hex_number_msg db 'Enter two digits of B hex number:$'
+    A_bits_msg db 'A bits:$'
+    B_bits_msg db 'B bits:$'
+    B_mul_2_bits_msg db 'B*2 bits:$'
+    C_bits_msg db 'C=A+B*2 bits:$'
     space_str db ' $'
-    number label byte
+    param_a label byte
+    param_b label byte
+    
 data ends
     
 stk segment stack
@@ -66,6 +72,27 @@ printByte:
     ret
 printBitsOfDl endp
 
+extractDlHexNumberToAx proc near
+    mov    bl, 16
+    xor    ax, ax
+    mov    al, dl
+    div    bl ; ax div bl, al quotient, ah remainder
+extractDlHexNumberToAx endp
+
+; inputs: ax - number
+printBitsOfAx proc near
+    push   ax
+    mov    dl, ah 
+    call   printNewLine
+    call   printBitsOfDl
+    pop    ax
+    
+    mov    dl, al
+    call   printSpace
+    call   printBitsOfDl
+    ret
+printBitsOfAx endp
+
 ; returns: dl - hex number
 getHexNumberFromAsciiCharsToDl proc near  
     xor   ax, ax
@@ -93,54 +120,83 @@ M1:
     sub   al, 7h
 M2: 
     add   dl, al
-    ret
+    ret;
 getHexNumberFromAsciiCharsToDl endp
 
 main proc
     assume ds:data, ss:stk
+    
     mov    ax, data
     mov    ds, ax
     
-    mov    dx, offset enter_first_hex_number_msg
-    mov    ah, 9h
-    int    21h
-    call   printNewLine
-    
-    call   getHexNumberFromAsciiCharsToDl
-    mov    number, dl
-    
-    mov    dx, offset enter_second_hex_number_msg
-    call   printNewLine
+    mov    dx, offset enter_A_hex_number_msg
     mov    ah, 9h
     int    21h
     call   printNewLine
     call   getHexNumberFromAsciiCharsToDl
+    mov    param_a, dl
+    
+    mov    dx, offset enter_B_hex_number_msg
+    call   printNewLine
+    mov    ah, 9h
+    int    21h
+    call   printNewLine
+    call   getHexNumberFromAsciiCharsToDl
+    mov    param_b, dl
+    
+    call   printNewLine
+    xor    ax, ax
+    mov    dx, offset A_bits_msg
+    mov    ah, 9h
+    int    21h
+    xor    dx, dx
+    add    dl, param_a
+    call   printNewLine
+    call   printBitsOfDl
+    
+    call   printNewLine
+    xor    ax, ax
+    mov    dx, offset B_bits_msg
+    mov    ah, 9h
+    int    21h
+    xor    dx, dx
+    add    dl, param_b
+    call   printNewLine
+    call   printBitsOfDl
+    
+    xor    dx, dx
+    xor    ax, ax
+    
+    ; B*2
+    mov    al, param_b
+    sal    ax, 1
+    adc    ah, 0
     
     call   printNewLine
     push   dx
+    push   ax
     xor    ax, ax
-    mov    dx, offset first_number_bits_msg
+    mov    dx, offset B_mul_2_bits_msg
     mov    ah, 9h
     int    21h
+    pop    ax
     pop    dx
-    xor    ax,ax
-    mov    al, dl
-    mov    dl, number
-    mov    number, al
-    call   printNewLine
-    call   printBitsOfDl
+    call   printBitsOfAx
+    
+    ; A+B*2
+    add    al, param_a
+    adc    ah, 0
     
     call   printNewLine
-    xor    ax, ax
-    mov    dx, offset second_number_bits_msg
+    push   dx
+    push   ax
+    mov    dx, offset C_bits_msg
     mov    ah, 9h
     int    21h
-    xor    dx,dx
-    mov    dl, number
-    call   printNewLine
-    call   printBitsOfDl
+    pop    ax
+    pop    dx
+    call   printBitsOfAx
     
-        
     mov    al, 00h
     mov    ah, 4ch
     int    21h
