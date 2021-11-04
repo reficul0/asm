@@ -178,19 +178,16 @@ calculate proc near
     mov    al, [bp+5]
     sal    ax, 1
     adc    ah, 0
-    
     printBitsOfAxPretty B_mul_2_bits_msg
     
     ; A+B*2
     add    al, [bp+4]
     adc    ah, 0
-    
     printBitsOfAxPretty C_bits_msg
     
     ; Zero all even bits of C
     mov    bx, 1010101010101010b
     and    ax, bx
-
     printBitsOfAxPretty C_with_even_bits_setted_to_zero_msg
 
     mov    sp,bp
