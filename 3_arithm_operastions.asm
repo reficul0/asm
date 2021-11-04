@@ -1,7 +1,9 @@
 masm
 model small dos
 
-; Variant 8: C=A+B*2
+; Variant 8: 
+; 1. C=A+B*2
+; 2. Zero all even bits of C
 
 data segment para public 'data'
     enter_A_hex_number_msg db 'Enter two digits of A hex number:$'
@@ -10,6 +12,7 @@ data segment para public 'data'
     B_bits_msg db 'B bits:$'
     B_mul_2_bits_msg db 'B*2 bits:$'
     C_bits_msg db 'C=A+B*2 bits:$'
+    C_with_zero_even_bits_msg db 'C with zero even bits:$'
     space_str db ' $'
     param_a label byte
     param_b label byte
@@ -191,6 +194,20 @@ main proc
     push   dx
     push   ax
     mov    dx, offset C_bits_msg
+    mov    ah, 9h
+    int    21h
+    pop    ax
+    pop    dx
+    call   printBitsOfAx
+    
+    ; Zero all even bits of C
+    mov    bx, 1010101010101010b
+    and    ax, bx
+    
+    call   printNewLine
+    push   dx
+    push   ax
+    mov    dx, offset C_with_zero_even_bits_msg
     mov    ah, 9h
     int    21h
     pop    ax
