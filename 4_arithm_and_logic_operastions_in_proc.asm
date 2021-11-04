@@ -1,9 +1,18 @@
 masm
-model small dos
+model small
 
+; Task #3
 ; Variant 8: 
 ; 1. C=A+B*2
 ; 2. Zero all even bits of C
+
+
+; Task #4
+; Variant 8: 
+; 1. proc for printing result
+; 2. proc for numbers enter
+; 3. proc for calculations
+; use stack
 
 data segment para public 'data'
     space_str db ' $'
@@ -14,8 +23,8 @@ data segment para public 'data'
     B_bits_msg db 'B bits:$'
     B_mul_2_bits_msg db 'B*2 bits(High Low):$'
     C_bits_msg db 'C=A+B*2 bits(High Low):$'
-    C_with_zero_even_bits_msg db 'C with zero even bits(High Low):$'
-
+    C_with_even_bits_setted_to_zero_msg db 'C with even bits setted to zero(High Low):$'
+    
     param_a db '?'
     param_b db '?'
     
@@ -39,7 +48,6 @@ printSpace proc near
     pop    dx
     ret
 printSpace endp
-
 printNewLine proc near  
     push   ax
     
@@ -76,13 +84,17 @@ printByte:
     pop    dx
     ret
 printBitsOfDl endp
-
-extractDlHexNumberToAx proc near
-    mov    bl, 16
+printBitsOfBytePretty macro message:REQ, srcByte:REQ
+    call   printNewLine
     xor    ax, ax
-    mov    al, dl
-    div    bl ; ax div bl, al quotient, ah remainder
-extractDlHexNumberToAx endp
+    mov    dx, offset message
+    mov    ah, 9h
+    int    21h
+    xor    dx, dx
+    mov    dl, srcByte
+    call   printNewLine
+    call   printBitsOfDl
+endm
 
 ; inputs: ax - number
 printBitsOfAx proc near
@@ -97,6 +109,18 @@ printBitsOfAx proc near
     call   printBitsOfDl
     ret
 printBitsOfAx endp
+printBitsOfAxPretty macro message:REQ
+    call   printNewLine
+    push   dx
+    push   ax
+    xor    ax, ax
+    mov    dx, offset message
+    mov    ah, 9h
+    int    21h
+    pop    ax
+    pop    dx
+    call   printBitsOfAx
+endm
 
 ; returns: dl - hex number
 getHexNumberFromAsciiCharsToDl proc near  
@@ -125,96 +149,71 @@ M1:
     sub   al, 7h
 M2: 
     add   dl, al
-    ret;
+    ret
 getHexNumberFromAsciiCharsToDl endp
+enterHexNumberToByteMacro macro message:REQ, dstByte:REQ
+    call   printNewLine
+    mov    dx, offset message
+    mov    ah, 9h
+    int    21h
+    call   printNewLine
+    call   getHexNumberFromAsciiCharsToDl
+    mov    dstByte, dl
+endm
 
-main proc
-    assume ds:data, ss:stk
-    
-    mov    ax, data
-    mov    ds, ax
-    
-    mov    dx, offset enter_A_hex_number_msg
-    mov    ah, 9h
-    int    21h
-    call   printNewLine
-    call   getHexNumberFromAsciiCharsToDl
-    mov    param_a, dl
-    
-    mov    dx, offset enter_B_hex_number_msg
-    call   printNewLine
-    mov    ah, 9h
-    int    21h
-    call   printNewLine
-    call   getHexNumberFromAsciiCharsToDl
-    mov    param_b, dl
-    
-    call   printNewLine
-    xor    ax, ax
-    mov    dx, offset A_bits_msg
-    mov    ah, 9h
-    int    21h
-    xor    dx, dx
-    mov    dl, param_a
-    call   printNewLine
-    call   printBitsOfDl
-    
-    call   printNewLine
-    xor    ax, ax
-    mov    dx, offset B_bits_msg
-    mov    ah, 9h
-    int    21h
-    xor    dx, dx
-    mov    dl, param_b
-    call   printNewLine
-    call   printBitsOfDl
-    
+; stack: 
+;   [bp+4] -> param_a 1 byte
+;   [bp+5] -> param_b 1 byte
+; effects:
+;   1. prints result of (param_a + param_b * 2)
+;   2. set to zero even bits of result from p.1 and print them all
+calculate proc near
+    push   bp
+    mov    bp,sp
+
     xor    dx, dx
     xor    ax, ax
     
     ; B*2
-    mov    al, param_b
+    mov    al, [bp+5]
     sal    ax, 1
     adc    ah, 0
     
-    call   printNewLine
-    push   dx
-    push   ax
-    xor    ax, ax
-    mov    dx, offset B_mul_2_bits_msg
-    mov    ah, 9h
-    int    21h
-    pop    ax
-    pop    dx
-    call   printBitsOfAx
+    printBitsOfAxPretty B_mul_2_bits_msg
     
     ; A+B*2
-    add    al, param_a
+    add    al, [bp+4]
     adc    ah, 0
     
-    call   printNewLine
-    push   dx
-    push   ax
-    mov    dx, offset C_bits_msg
-    mov    ah, 9h
-    int    21h
-    pop    ax
-    pop    dx
-    call   printBitsOfAx
+    printBitsOfAxPretty C_bits_msg
     
     ; Zero all even bits of C
     mov    bx, 1010101010101010b
     and    ax, bx
+
+    printBitsOfAxPretty C_with_even_bits_setted_to_zero_msg
+
+    mov    sp,bp
+    pop    bp
     
-    call   printNewLine
+    ret 2
+calculate endp
+
+main proc
+    assume ds:data, ss:stk
+    mov    ax, data
+    mov    ds, ax
+    
+    enterHexNumberToByteMacro enter_A_hex_number_msg, param_a
+    enterHexNumberToByteMacro enter_B_hex_number_msg, param_b
+    
+    printBitsOfBytePretty A_bits_msg, param_a
+    printBitsOfBytePretty B_bits_msg, param_b
+    
+    mov    dh, param_b
+    mov    dl, param_a
     push   dx
-    push   ax
-    mov    dx, offset C_with_zero_even_bits_msg
-    mov    ah, 9h
-    int    21h
-    pop    ax
-    pop    dx
-    call   printBitsOfAx
+    call   calculate
     
     mov    al, 00h
     mov    ah, 4ch
