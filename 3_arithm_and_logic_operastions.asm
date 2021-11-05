@@ -8,8 +8,8 @@ model small dos
 data segment para public 'data'
     space_str db ' $'
 
-    enter_A_hex_number_msg db 'Enter two digits of A hex number:$'
-    enter_B_hex_number_msg db 'Enter two digits of B hex number:$'
+    enter_A_hex_number_msg db 'Enter two digits of A hex number(use uppercase letters):$'
+    enter_B_hex_number_msg db 'Enter two digits of B hex number(use uppercase letters):$'
     A_bits_msg db 'A bits:$'
     B_bits_msg db 'B bits:$'
     B_mul_2_bits_msg db 'B*2 bits(High Low):$'
@@ -76,13 +76,6 @@ printByte:
     pop    dx
     ret
 printBitsOfDl endp
-
-extractDlHexNumberToAx proc near
-    mov    bl, 16
-    xor    ax, ax
-    mov    al, dl
-    div    bl ; ax div bl, al quotient, ah remainder
-extractDlHexNumberToAx endp
 
 ; inputs: ax - number
 printBitsOfAx proc near

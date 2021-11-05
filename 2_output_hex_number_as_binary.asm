@@ -2,8 +2,8 @@ masm
 model small dos
 
 data segment para public 'data'
-    enter_first_hex_number_msg db 'Enter two digits of first hex number:$'
-    enter_second_hex_number_msg db 'Enter two digits of second hex number:$'
+    enter_first_hex_number_msg db 'Enter two digits of first hex number(use uppercase letters):$'
+    enter_second_hex_number_msg db 'Enter two digits of second hex number(use uppercase letters):$'
     first_number_bits_msg db 'First number bits:$'
     second_number_bits_msg db 'Second number bits:$'
     space_str db ' $'
